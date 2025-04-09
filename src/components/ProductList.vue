@@ -19,7 +19,6 @@
               @click="toggleCategory(category)"
             >
               {{ category.name }}
-              <span v-if="category.name">{{ console.log(category.name) }}</span>
             </div>
             <ul v-if="category.expanded" class="subcategories">
               <li v-for="sub in category.subcategories" :key="sub.id">
@@ -54,11 +53,8 @@
     <!-- Product List Section -->
     <div class="product-list">
       <div v-for="product in products" :key="product.id" class="product-item">
-        <img
-          :src="product.imageUrl"
-          :alt="product.name"
-          class="product-image"
-        />
+        <small class="merchant-badge">{{ product.merchantName }}</small>
+        <img :src="product.imageUrl" class="product-image" />
         <h4>{{ product.name }}</h4>
         <p>قیمت:</p>
         <p>{{ product.minPrice }} تومان</p>
@@ -81,9 +77,9 @@ export default {
     return {
       baseUrl: "https://interview-api.azkivam.com/api/v1/products",
       categories: [],
-      selectedCategoryId: null,
-      selectedSubcategoryId: null,
-      selectedSubcategorySlug: "",
+      // selectedCategoryId: null,
+      // selectedSubcategoryId: null,
+      // selectedSubcategorySlug: "",
       selectedCategoryName: null,
       shops: [],
       selectedShops: [],
@@ -102,6 +98,30 @@ export default {
       );
     },
   },
+  /*
+    TODO - Pouya: This is the watch that is used to update the route when the user changes the filters
+    This is used to ensure that the URL is updated with the new filters
+    This is also used to initialize the component with the correct filters from the URL when the component is mounted
+  */
+  watch: {
+    // Watch for route changes
+    $route: {
+      immediate: true,
+      handler(to) {
+        this.handleRouteChange(to);
+      },
+    },
+    selectedShops: {
+      handler() {
+        this.updateRoute();
+      },
+    },
+    // selectedSubcategoryId: {
+    //   handler() {
+    //     this.updateRoute();
+    //   },
+    // },
+  },
   mounted() {
     this.fetchCategories();
     this.fetchAllProducts();
@@ -111,15 +131,64 @@ export default {
   beforeDestroy() {
     window.removeEventListener("scroll", this.handleScroll);
   },
-  watch: {
-    selectedSubcategoryId() {
-      this.applyFilters();
-    },
-    selectedShops() {
-      this.applyFilters();
-    },
-  },
   methods: {
+    handleRouteChange(to) {
+      console.log("to", to);
+      // Extract parameters from route
+      const { merchantIds, subcategoryId, categoryName } = to.query;
+
+      // Update selected shops
+      if (merchantIds) {
+        this.selectedShops = merchantIds.split(",").map(Number);
+      } else {
+        this.selectedShops = [];
+      }
+
+      // Update subcategory
+      // if (subcategoryId) {
+      //   this.selectedSubcategoryId = Number(subcategoryId);
+      // } else {
+      //   this.selectedSubcategoryId = null;
+      // }
+
+      // Update category name
+      if (categoryName) {
+        this.selectedCategoryName = categoryName;
+      } else {
+        this.selectedCategoryName = null;
+      }
+
+      // Reset pagination
+      this.currentPage = 1;
+      this.allProducts = [];
+      this.products = [];
+
+      // Fetch products with new filters
+      this.fetchAllProducts();
+    },
+
+    updateRoute() {
+      const query = {};
+
+      if (this.selectedShops.length) {
+        query.merchantIds = this.selectedShops.join(",");
+      }
+
+      // if (this.selectedSubcategoryId) {
+      //   query.subcategoryId = this.selectedSubcategoryId;
+      // }
+
+      if (this.selectedCategoryName) {
+        query.categoryName = this.selectedCategoryName;
+      }
+
+      // Use replace to avoid building up history
+      this.$router.replace({
+        path: "/products",
+        query,
+      });
+    },
+
     isActiveCategory(name) {
       return (
         name.toLowerCase() === (this.selectedCategoryName || "").toLowerCase()
@@ -131,7 +200,7 @@ export default {
         const res = await axios.get(
           "https://interview-api.azkivam.com/api/v1/categories"
         );
-        console.log("API Response:", res);
+        // console.log("API Response:", res);
 
         const allCategories = res.data.data;
         if (!allCategories || allCategories.length === 0) {
@@ -216,24 +285,37 @@ export default {
       if (this.loading || this.currentPage > this.totalPages) return;
 
       this.loading = true;
-      const queryParams = new URLSearchParams();
+      const query = {};
+      query.size = 20;
+      query.page = this.currentPage;
 
-      // Check if there are any filters in the URL (merchantIds and subcategoryId)
+      // if (this.selectedSubcategoryId) {
+      //   query.subcategoryId = this.selectedSubcategoryId;
+      // }
+
+      let merchantIds = [];
       if (this.selectedShops.length) {
-        queryParams.set("merchantIds", this.selectedShops.join(","));
+        merchantIds = this.selectedShops;
       }
-      if (this.selectedSubcategoryId) {
-        queryParams.set("subcategoryId", this.selectedSubcategoryId);
-      }
+
       try {
         const res = await axios.post(
-          `${this.baseUrl}?${queryParams.toString()}&size=20&page=${
-            this.currentPage
-          }`
+          `${this.baseUrl}?${new URLSearchParams(query).toString()}`
         );
+        const data = res.data.data;
+        console.log("API Response:", data);
+        if (this.currentPage === 1) {
+          this.allProducts = data;
+          this.products = data;
+        } else {
+          this.allProducts = [...this.allProducts, ...data];
+          this.products = [...this.allProducts];
+        }
 
-        this.allProducts = [...this.allProducts, ...res.data.data];
-        this.products = [...this.allProducts];
+        // TODO - Pouya: Filter products by merchantIds
+        this.products = this.products.filter((p) =>
+          merchantIds.includes(p.merchantId)
+        );
 
         const uniqueShops = new Map();
         res.data.data.forEach((p) => {
@@ -252,7 +334,14 @@ export default {
           this.currentPage = this.totalPages + 1;
         }
 
-        this.shops = Array.from(uniqueShops.values());
+        // TODO - Pouya: This ensures that the shops are sorted by id before adding them to the shops array
+        const newShops = Array.from(uniqueShops.values());
+        // Only add shops that don't already exist in this.shops
+        newShops.forEach((shop) => {
+          if (!this.shops.some((existingShop) => existingShop.id === shop.id)) {
+            this.shops.push(shop);
+          }
+        });
       } catch (e) {
         console.error("Error fetching products", e);
       } finally {
@@ -276,19 +365,19 @@ export default {
       }
     },
 
-    async filterBySubcategory(id, slug, categoryId) {
-      this.selectedCategoryId = categoryId;
-      this.selectedSubcategoryId = id;
-      this.selectedSubcategorySlug = slug;
+    // async filterBySubcategory(id, slug, categoryId) {
+    //   this.selectedCategoryId = categoryId;
+    //   this.selectedSubcategoryId = id;
+    //   this.selectedSubcategorySlug = slug;
 
-      await this.loadAllPagesBeforeFiltering();
-      this.applyFilters();
-    },
+    //   await this.loadAllPagesBeforeFiltering();
+    //   this.applyFilters();
+    // },
 
-    selectCategory(category) {
-      this.categories.forEach((c) => (c.expanded = false));
-      category.expanded = !category.expanded;
-    },
+    // selectCategory(category) {
+    //   this.categories.forEach((c) => (c.expanded = false));
+    //   category.expanded = !category.expanded;
+    // },
 
     applyFilters() {
       const query = {};
@@ -298,9 +387,9 @@ export default {
         query.merchantIds = this.selectedShops.join(",");
       }
 
-      if (this.selectedSubcategoryId) {
-        query.subcategoryId = this.selectedSubcategoryId;
-      }
+      // if (this.selectedSubcategoryId) {
+      //   query.subcategoryId = this.selectedSubcategoryId;
+      // }
 
       // Update the URL with query parameters
       this.$router.push({
@@ -312,44 +401,9 @@ export default {
       this.fetchAllProducts();
     },
 
-    updateURL() {
-      const query = {};
-      if (this.selectedShops.length) {
-        query.merchantIds = this.selectedShops.join(",");
-      }
-
-      if (this.selectedSubcategoryId) {
-        this.$router.push({
-          path: `/products/${this.selectedCategoryName}/${this.selectedSubcategorySlug}`,
-          query,
-        });
-      } else {
-        this.$router.push({ path: "/products", query });
-      }
-    },
-
     initializeFromURL() {
-      const { merchantIds } = this.$route.query;
-      const subcategoryId = this.$route.params.subcategoryId;
-      const subcategorySlug = this.$route.params.subcategorySlug;
-      const categoryName = this.$route.params.categoryName;
-
-      if (merchantIds) {
-        this.selectedShops = merchantIds.split(",").map(Number);
-      }
-
-      if (subcategoryId) {
-        this.selectedSubcategoryId = Number(subcategoryId);
-        //this.selectedSubcategorySlug = subcategorySlug || "";
-      }
-
-      if (categoryName) {
-        this.selectedCategoryName = categoryName;
-      }
-
+      this.handleRouteChange(this.$route);
       this.expandSelectedCategory();
-      this.applyFilters();
-      this.fetchAllProducts();
     },
 
     expandSelectedCategory() {
@@ -412,6 +466,7 @@ export default {
   width: 200px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   max-height: auto;
+  position: relative;
 }
 
 .product-image {
@@ -490,6 +545,21 @@ h3 {
   font-weight: 600;
   padding-bottom: 8px;
 }
+
+.merchant-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #3498db;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 1;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
 @media screen and (max-width: 1215.98px) {
   .product-list {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

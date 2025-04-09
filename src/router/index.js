@@ -1,8 +1,19 @@
 import { createRouter, createWebHistory } from "vue-router";
 import ProductList from "@/components/ProductList.vue";
-import CategoryProductPage from "@/components/CategoryProductPage.vue";
 
 const routes = [
+  {
+    path: "/",
+    redirect: "/products"
+  },
+  // Explain: This route is used to display the product list and filters
+  {
+    path: "/products",
+    name: "products",
+    component: ProductList
+  },
+  // Explain: This route is used to display the product list for a specific category and subcategory.
+  // and it's used for filtering products by category and subcategory.
   {
     path: "/products/:categoryId/:subcategoryId",
     name: "product-list",
