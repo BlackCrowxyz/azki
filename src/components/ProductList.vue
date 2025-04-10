@@ -101,8 +101,7 @@
             height="250"
           />
           <h4>{{ product.name }}</h4>
-          <p>قیمت:</p>
-          <p>{{ product.minPrice }} تومان</p>
+          <p>شروع قیمت از: {{ formatPrice(product.minPrice) }} تومان</p>
         </div>
       </div>
 
@@ -165,6 +164,9 @@ export default {
     window.removeEventListener("scroll", this.handleScroll);
   },
   methods: {
+    formatPrice(price) {
+      return new Intl.NumberFormat("fa-IR").format(price);
+    },
     handleRouteChange(to) {
       console.log("to", to);
 
@@ -549,6 +551,8 @@ export default {
 </script>
 
 <style scoped>
+@import url("https://cdn.jsdelivr.net/gh/rastikerdar/vazir-font@v30.1.0/dist/font-face.css");
+
 /* Color Classes */
 .text-primary {
   color: var(--vt-c-blue);
@@ -568,6 +572,27 @@ export default {
 
 .border-primary {
   border-color: var(--vt-c-blue);
+}
+
+/* Base Styles */
+.products-page,
+.content,
+.filter-box,
+.product-list,
+.product-item,
+.category-header,
+.subcategories li,
+.shops li,
+.reset-btn,
+.shop-search-box,
+.empty-state,
+.empty-text,
+h3,
+h4,
+p {
+  font-family: "Vazir", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
 }
 
 .d-flex {
@@ -685,7 +710,7 @@ h3 {
   width: 100%;
   height: 100%;
   padding: 40px;
-  text-align: center;
+  text-align: right;
   background-color: var(--color-background-soft);
   border-radius: 8px;
 }
@@ -708,7 +733,7 @@ h3 {
   background-color: var(--color-background);
   padding: 15px;
   border-radius: 8px;
-  text-align: center;
+  text-align: right;
   flex: 0 0 calc(25% - 20px);
   min-width: 200px;
   max-width: 300px;
