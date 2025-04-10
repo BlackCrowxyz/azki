@@ -69,41 +69,17 @@
     <!-- Product List Section -->
     <section class="product-list-section">
       <div class="product-list">
-        <div class="empty-state" v-if="products.length === 0">
-          <svg
-            class="empty-icon"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="9" cy="21" r="1"></circle>
-            <circle cx="20" cy="21" r="1"></circle>
-            <path
-              d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
-            ></path>
-          </svg>
-          <p class="empty-text">کالایی برای نمایش وجود ندارد</p>
-        </div>
-        <div
+        <EmptyState
+          v-if="products.length === 0"
+          message="کالایی برای نمایش وجود ندارد"
+        />
+        <ProductCard
           v-else
           v-for="product in products"
           :key="product.id"
-          class="product-item"
-        >
-          <img
-            :src="product.imageUrl || defaultImage"
-            class="product-image"
-            width="250"
-            height="250"
-            @error="handleImageError"
-          />
-          <h4>{{ product.name }}</h4>
-          <p>شروع قیمت از: {{ formatPrice(product.minPrice) }} تومان</p>
-        </div>
+          :product="product"
+          :defaultImage="defaultImage"
+        />
       </div>
 
       <div ref="loadMoreTrigger" class="load-more-trigger"></div>
@@ -113,8 +89,14 @@
 
 <script>
 import axios from "axios";
+import EmptyState from "./EmptyState.vue";
+import ProductCard from "./ProductCard.vue";
 
 export default {
+  components: {
+    EmptyState,
+    ProductCard,
+  },
   data() {
     return {
       categories: [],
@@ -167,9 +149,6 @@ export default {
     window.removeEventListener("scroll", this.handleScroll);
   },
   methods: {
-    formatPrice(price) {
-      return new Intl.NumberFormat("fa-IR").format(price);
-    },
     handleRouteChange(to) {
       console.log("to", to);
 
@@ -548,10 +527,6 @@ export default {
       this.shops = [];
       this.updateRoute();
       this.fetchAllProducts();
-    },
-
-    handleImageError(e) {
-      e.target.src = this.defaultImage;
     },
   },
 };
