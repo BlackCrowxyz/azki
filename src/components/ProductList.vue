@@ -23,6 +23,7 @@
                 v-for="sub in category.subcategories"
                 :key="sub.id"
                 @click="selectCategory(sub.id, sub.slug)"
+                :class="{ active: selectedCategoryId === sub.id }"
               >
                 {{ sub.name }}
               </li>
@@ -523,7 +524,6 @@ export default {
 }
 
 .products-page {
-  padding: 20px;
   display: flex;
   flex-direction: row;
   gap: 20px;
@@ -566,7 +566,7 @@ export default {
   flex-wrap: wrap;
   gap: 20px;
   margin-top: 20px;
-  flex: 1;
+  /* flex: 1; */
   justify-content: flex-start;
   width: 100%;
 }
@@ -579,6 +579,8 @@ export default {
   flex: 0 0 calc(25% - 20px);
   min-width: 200px;
   max-width: 300px;
+  max-height: 400px;
+  overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
@@ -596,7 +598,7 @@ export default {
   height: 250px;
   max-width: 100%;
   border-radius: 8px;
-  object-fit: cover;
+  object-fit: contain;
   margin-bottom: 10px;
 }
 
@@ -646,11 +648,33 @@ hr {
   color: rgb(157, 158, 158);
   padding-right: 15px;
   cursor: pointer;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
+  position: relative;
+  padding: 8px 15px;
+  border-radius: 4px;
 }
 
 .subcategories li:hover {
   color: #007bff;
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.subcategories li.active {
+  color: #007bff;
+  background-color: rgba(0, 123, 255, 0.1);
+  font-weight: 500;
+}
+
+.subcategories li.active::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 100%;
+  background-color: #007bff;
+  border-radius: 0 4px 4px 0;
 }
 
 .categories li {
@@ -678,7 +702,7 @@ h3 {
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
-  padding: 8px 0;
+  padding: 8px;
   cursor: pointer;
 }
 
@@ -717,7 +741,6 @@ h3 {
 @media screen and (max-width: 1080px) {
   .products-page {
     flex-direction: column;
-    padding: 15px;
   }
 
   .content {
@@ -747,7 +770,6 @@ h3 {
 @media screen and (max-width: 750px) {
   .products-page {
     flex-direction: column;
-    padding: 10px;
   }
 
   .product-item {
@@ -760,7 +782,7 @@ h3 {
   }
 
   .shops {
-    max-height: 150px;
+    max-height: 160px;
   }
 
   .product-image {
@@ -769,10 +791,6 @@ h3 {
 }
 
 @media screen and (max-width: 480px) {
-  .products-page {
-    padding: 5px;
-  }
-
   .product-item {
     padding: 10px;
   }
@@ -790,7 +808,7 @@ h4 {
   font-weight: bold;
   margin: 10px 0;
   color: #333;
-  font-size: 1.1rem;
+  font-size: 0.8rem;
 }
 
 /* Custom Scrollbar */
