@@ -95,10 +95,11 @@
           class="product-item"
         >
           <img
-            :src="product.imageUrl"
+            :src="product.imageUrl || defaultImage"
             class="product-image"
             width="250"
             height="250"
+            @error="handleImageError"
           />
           <h4>{{ product.name }}</h4>
           <p>شروع قیمت از: {{ formatPrice(product.minPrice) }} تومان</p>
@@ -126,6 +127,8 @@ export default {
       loading: false,
       totalPages: 1,
       selectedCategoryId: null,
+      defaultImage:
+        "https://www.azki.com/static/images/azki/logo/azki-logo-simple.svg",
     };
   },
   computed: {
@@ -546,6 +549,10 @@ export default {
       this.updateRoute();
       this.fetchAllProducts();
     },
+
+    handleImageError(e) {
+      e.target.src = this.defaultImage;
+    },
   },
 };
 </script>
@@ -758,6 +765,12 @@ h3 {
   border-radius: 8px;
   object-fit: contain;
   margin-bottom: 10px;
+}
+
+.product-image[src*="azki-logo-simple"] {
+  opacity: 0.3;
+  background-color: var(--color-background-soft);
+  padding: 20px;
 }
 
 hr {
