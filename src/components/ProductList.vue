@@ -69,8 +69,24 @@
     <!-- Product List Section -->
     <section class="product-list-section">
       <div class="product-list">
-        <div class="d-flex justify-center" v-if="products.length === 0">
-          <p class="ma-auto w-100">کالایی برای نمایش وجود ندارد</p>
+        <div class="empty-state" v-if="products.length === 0">
+          <svg
+            class="empty-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path
+              d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+            ></path>
+          </svg>
+          <p class="empty-text">کالایی برای نمایش وجود ندارد</p>
         </div>
         <div
           v-else
@@ -571,7 +587,6 @@ export default {
 }
 
 .products-page {
-  padding: 20px;
   display: flex;
   flex-direction: row;
   gap: 20px;
@@ -651,6 +666,42 @@ h3 {
   margin-top: 20px;
   justify-content: flex-start;
   width: 100%;
+  min-height: calc(100vh - 100px);
+  @media screen and (max-width: 750px) {
+    min-height: calc(100vh - 430px);
+  }
+  position: relative;
+}
+
+.empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 40px;
+  text-align: center;
+  background-color: var(--color-background-soft);
+  border-radius: 8px;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--vt-c-text-light-2);
+  margin-bottom: 16px;
+}
+
+.empty-text {
+  color: var(--vt-c-text-light-2);
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 500;
 }
 
 .product-item {
