@@ -13,10 +13,18 @@
           <li v-for="category in categories" :key="category.id">
             <div
               class="category-header"
-              :class="{ active: isActiveCategory(category.name) }"
+              :class="{
+                active:
+                  isActiveCategory(category.name) ||
+                  category.subcategories.some(
+                    (sub) => selectedCategoryId === sub.id
+                  ),
+                expanded: category.expanded,
+              }"
               @click="toggleCategory(category)"
             >
               {{ category.name }}
+              <span class="chevron"></span>
             </div>
             <ul v-if="category.expanded" class="subcategories">
               <li
@@ -507,6 +515,27 @@ export default {
 </script>
 
 <style scoped>
+/* Color Classes */
+.text-primary {
+  color: var(--vt-c-blue);
+}
+
+.text-secondary {
+  color: var(--vt-c-text-light-2);
+}
+
+.bg-primary-light {
+  background-color: var(--vt-c-blue-light);
+}
+
+.bg-primary-hover:hover {
+  background-color: var(--vt-c-blue-light);
+}
+
+.border-primary {
+  border-color: var(--vt-c-blue);
+}
+
 .d-flex {
   display: flex;
 }
@@ -524,6 +553,7 @@ export default {
 }
 
 .products-page {
+  padding: 20px;
   display: flex;
   flex-direction: row;
   gap: 20px;
@@ -541,7 +571,7 @@ export default {
 }
 
 .filter-box {
-  background-color: #f4f4f4;
+  background-color: var(--color-background-soft);
   padding: 20px;
   border-radius: 8px;
   width: 280px;
@@ -566,13 +596,12 @@ export default {
   flex-wrap: wrap;
   gap: 20px;
   margin-top: 20px;
-  /* flex: 1; */
   justify-content: flex-start;
   width: 100%;
 }
 
 .product-item {
-  background-color: white;
+  background-color: var(--color-background);
   padding: 15px;
   border-radius: 8px;
   text-align: center;
@@ -605,7 +634,7 @@ export default {
 hr {
   margin: 20px 0;
   border: 0;
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--color-border);
 }
 
 .shop-search-box {
@@ -614,13 +643,13 @@ hr {
   margin: 10px 0;
   text-align: right;
   border-radius: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border);
 }
 
 .shop-search-box:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: var(--vt-c-blue);
+  box-shadow: 0 0 0 2px var(--vt-c-blue-light);
 }
 
 .load-more-trigger {
@@ -635,6 +664,7 @@ hr {
   padding: 0;
   margin: 0;
   text-align: right;
+  margin-bottom: 4px;
 }
 
 .categories li,
@@ -645,23 +675,22 @@ hr {
 }
 
 .subcategories li {
-  color: rgb(157, 158, 158);
-  padding-right: 15px;
+  color: var(--vt-c-text-light-2);
+  padding: 8px 15px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  padding: 8px 15px;
   border-radius: 4px;
 }
 
 .subcategories li:hover {
-  color: #007bff;
-  background-color: rgba(0, 123, 255, 0.1);
+  color: var(--vt-c-blue);
+  background-color: var(--vt-c-blue-light);
 }
 
 .subcategories li.active {
-  color: #007bff;
-  background-color: rgba(0, 123, 255, 0.1);
+  color: var(--vt-c-blue);
+  background-color: var(--vt-c-blue-light);
   font-weight: 500;
 }
 
@@ -673,19 +702,72 @@ hr {
   transform: translateY(-50%);
   width: 3px;
   height: 100%;
-  background-color: #007bff;
+  background-color: var(--vt-c-blue);
   border-radius: 0 4px 4px 0;
 }
 
 .categories li {
   display: block;
-  margin-bottom: 15px;
+}
+
+.category-header {
+  font-weight: 600;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 4px;
+  position: relative;
+  margin-bottom: 2px;
+}
+
+.category-header:hover {
+  color: var(--vt-c-blue);
+  background-color: var(--vt-c-blue-light);
+}
+
+.category-header.active {
+  color: var(--vt-c-blue);
+  background-color: var(--vt-c-blue-light);
+}
+
+.category-header.active::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 100%;
+  background-color: var(--vt-c-blue);
+  border-radius: 0 4px 4px 0;
+}
+
+.chevron {
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.3s ease;
+  margin-right: 8px;
+}
+
+.category-header.expanded .chevron {
+  transform: rotate(-135deg);
+}
+
+.subcategories {
+  margin-top: 5px;
+  padding-right: 15px;
 }
 
 h3 {
   font-weight: bold;
   padding-bottom: 12px;
-  color: #333;
+  color: var(--color-heading);
 }
 
 .shops {
@@ -693,7 +775,7 @@ h3 {
   padding: 0;
   margin: 0;
   text-align: right;
-  max-height: 200px;
+  max-height: 160px;
   overflow-y: auto;
 }
 
@@ -707,7 +789,7 @@ h3 {
 }
 
 .shops li:hover {
-  background-color: rgba(0, 123, 255, 0.1);
+  background-color: var(--vt-c-blue-light);
   border-radius: 4px;
 }
 
@@ -716,19 +798,23 @@ h3 {
   cursor: pointer;
 }
 
-.category-header {
-  font-weight: 600;
-  padding: 8px 0;
-  cursor: pointer;
-  transition: color 0.2s ease;
+/* Custom Scrollbar */
+.shops::-webkit-scrollbar {
+  width: 6px;
 }
 
-.category-header:hover {
-  color: #007bff;
+.shops::-webkit-scrollbar-track {
+  background: var(--color-background-soft);
+  border-radius: 3px;
 }
 
-.category-header.active {
-  color: #007bff;
+.shops::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.shops::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-hover);
 }
 
 /* Responsive Design */
@@ -807,26 +893,7 @@ h3 {
 h4 {
   font-weight: bold;
   margin: 10px 0;
-  color: #333;
+  color: var(--color-heading);
   font-size: 0.8rem;
-}
-
-/* Custom Scrollbar */
-.shops::-webkit-scrollbar {
-  width: 6px;
-}
-
-.shops::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.shops::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 3px;
-}
-
-.shops::-webkit-scrollbar-thumb:hover {
-  background: #555;
 }
 </style>
