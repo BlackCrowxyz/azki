@@ -1,8 +1,6 @@
 <template>
   <div class="products-page">
     <div class="content">
-      <CategoryProductPage :categoryName="selectedCategoryName" />
-
       <!-- Filtering Box -->
       <aside class="filter-box">
         <h3>دسته‌بندی‌ها</h3>
@@ -56,7 +54,18 @@
 
     <!-- Product List Section -->
     <div class="product-list">
-      <div v-for="product in products" :key="product.id" class="product-item">
+      <div
+        class="d-flex justify-center align-center"
+        v-if="products.length === 0"
+      >
+        <p class="ma-auto">کالایی برای نمایش وجود ندارد</p>
+      </div>
+      <div
+        v-else
+        v-for="product in products"
+        :key="product.id"
+        class="product-item"
+      >
         <img :src="product.imageUrl" class="product-image" />
         <h4>{{ product.name }}</h4>
         <p>قیمت:</p>
@@ -70,15 +79,10 @@
 
 <script>
 import axios from "axios";
-import CategoryProductPage from "@/components/CategoryProductPage.vue";
 
 export default {
-  components: {
-    CategoryProductPage,
-  },
   data() {
     return {
-      baseUrl: "https://interview-api.azkivam.com/api/v1/products",
       categories: [],
       selectedCategoryName: null,
       shops: [],
@@ -140,13 +144,6 @@ export default {
         this.selectedCategoryId = null;
       }
 
-      // Handle category name (slug) from params
-      if (slug) {
-        this.selectedCategoryName = slug;
-      } else {
-        this.selectedCategoryName = null;
-      }
-
       // Update selected shops from query (keeping this part unchanged)
       const { merchantIds } = to.query;
       if (merchantIds) {
@@ -157,6 +154,7 @@ export default {
 
       // Update category name based on the selected category
       if (this.selectedCategoryId) {
+        // First try to find the category in parent categories
         const category = this.categories.find(
           (cat) => cat.id === this.selectedCategoryId
         );
@@ -189,7 +187,24 @@ export default {
     selectCategory(id, slug) {
       console.log("selectCategory", id, slug);
       this.selectedCategoryId = id;
-      this.selectedCategoryName = slug;
+
+      // Find the category name from the categories list
+      let categoryName = null;
+      const category = this.categories.find((cat) => cat.id === id);
+      if (category) {
+        categoryName = category.name;
+      } else {
+        // If not found in parent categories, search in subcategories
+        for (const parentCat of this.categories) {
+          const subcat = parentCat.subcategories.find((sub) => sub.id === id);
+          if (subcat) {
+            categoryName = subcat.name;
+            break;
+          }
+        }
+      }
+
+      this.selectedCategoryName = categoryName || slug;
       this.currentPage = 1;
       this.products = [];
       this.updateRoute();
@@ -211,7 +226,11 @@ export default {
 
       console.log("params", params);
       console.log("query", query);
-      console.log("this.selectedCategoryId", this.selectedCategoryId);
+      console.log(
+        "this.selectedCategoryId",
+        this.selectedCategoryId,
+        this.selectedCategoryId ? "product-list" : "products"
+      );
       // Use replace to avoid building up history
       this.$router.replace({
         name: this.selectedCategoryId ? "product-list" : "products",
@@ -314,14 +333,24 @@ export default {
     },
 
     async fetchAllProducts() {
-      if (this.loading || this.currentPage > this.totalPages) return;
+      console.log(
+        "fetchAllProducts",
+        this.loading,
+        this.currentPage,
+        this.totalPages
+      );
+      if (
+        this.loading ||
+        (this.currentPage > this.totalPages && this.totalPages !== 0)
+      )
+        return;
 
       this.loading = true;
       const query = {};
       query.size = 20;
       query.page = this.currentPage;
 
-      let url = this.baseUrl;
+      let url = "https://interview-api.azkivam.com/api/v1/products";
       let categoryIds = [];
 
       if (this.selectedCategoryId) {
@@ -374,7 +403,7 @@ export default {
         }
 
         const uniqueShops = new Map();
-        res.data.data.forEach((p) => {
+        data.forEach((p) => {
           if (p.merchantName && !uniqueShops.has(p.merchantName)) {
             uniqueShops.set(p.merchantName, {
               id: p.merchantId,
@@ -423,19 +452,27 @@ export default {
 
     applyFilters() {
       const query = {};
+      const params = {};
 
-      // Update the query with selected shops and subcategory
+      // Update the query with selected shops
       if (this.selectedShops.length) {
         query.merchantIds = this.selectedShops.join(",");
       }
 
-      // Update the URL with query parameters
+      // Preserve category params if they exist
+      if (this.selectedCategoryId) {
+        params.categoryId = this.selectedCategoryId;
+        params.slug = this.selectedCategoryName;
+      }
+
+      // Update the URL with both params and query parameters
       this.$router.push({
-        path: "/products", // Adjust this path as per your routing
+        name: this.selectedCategoryId ? "product-list" : "products",
+        params,
         query,
       });
 
-      // Fetch products with the updated URL query
+      // Fetch products with the updated filters
       this.fetchAllProducts();
     },
 
@@ -465,6 +502,19 @@ export default {
 </script>
 
 <style scoped>
+.d-flex {
+  display: flex;
+}
+.justify-center {
+  justify-content: center;
+}
+.align-center {
+  align-items: center;
+}
+.ma-auto {
+  margin: auto;
+}
+
 .products-page {
   padding: 20px;
   display: flex;
