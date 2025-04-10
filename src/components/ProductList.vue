@@ -3,7 +3,12 @@
     <div class="content">
       <!-- Filtering Box -->
       <aside class="filter-box">
-        <h3>دسته‌بندی‌ها</h3>
+        <div class="filter-header">
+          <h3>دسته‌بندی‌ها</h3>
+          <button class="reset-btn" @click="resetFilters">
+            پاک کردن فیلترها
+          </button>
+        </div>
 
         <div v-if="categories.length === 0">
           <p>No categories available</p>
@@ -510,6 +515,19 @@ export default {
         }
       });
     },
+
+    resetFilters() {
+      this.selectedCategoryId = null;
+      this.selectedCategoryName = null;
+      this.selectedShops = [];
+      this.shopSearchQuery = "";
+      this.currentPage = 1;
+      this.products = [];
+      this.totalPages = 1;
+      this.shops = [];
+      this.updateRoute();
+      this.fetchAllProducts();
+    },
   },
 };
 </script>
@@ -582,6 +600,41 @@ export default {
   overflow-y: auto;
   position: sticky;
   top: 20px;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 16px;
+}
+
+.reset-btn {
+  background-color: var(--vt-c-blue-light);
+  color: var(--vt-c-blue);
+  border: 1px solid var(--vt-c-blue);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+}
+
+.reset-btn:hover {
+  background-color: var(--vt-c-blue);
+  color: white;
+}
+
+.reset-btn:active {
+  background-color: var(--vt-c-blue-active);
+  border-color: var(--vt-c-blue-active);
+}
+
+h3 {
+  font-weight: bold;
+  padding-bottom: 12px;
+  color: var(--color-heading);
+  margin: 0;
 }
 
 .product-list-section {
@@ -762,12 +815,6 @@ hr {
 .subcategories {
   margin-top: 5px;
   padding-right: 15px;
-}
-
-h3 {
-  font-weight: bold;
-  padding-bottom: 12px;
-  color: var(--color-heading);
 }
 
 .shops {
