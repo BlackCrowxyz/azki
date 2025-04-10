@@ -24,7 +24,7 @@
               <li
                 v-for="sub in category.subcategories"
                 :key="sub.id"
-                @click="selectCategory(sub.id, sub.name)"
+                @click="selectCategory(sub.id, sub.slug)"
               >
                 {{ sub.name }}
               </li>
@@ -129,24 +129,51 @@ export default {
   methods: {
     handleRouteChange(to) {
       console.log("to", to);
-      // Extract parameters from route
-      const { merchantIds, categoryId, categoryName } = to.query;
+
+      // Extract parameters from route params instead of query
+      const { categoryId, slug } = to.params;
+
+      // Handle category ID from params
       if (categoryId) {
         this.selectedCategoryId = Number(categoryId);
       } else {
         this.selectedCategoryId = null;
       }
 
-      // Update selected shops
+      // Handle category name (slug) from params
+      if (slug) {
+        this.selectedCategoryName = slug;
+      } else {
+        this.selectedCategoryName = null;
+      }
+
+      // Update selected shops from query (keeping this part unchanged)
+      const { merchantIds } = to.query;
       if (merchantIds) {
         this.selectedShops = merchantIds.split(",").map(Number);
       } else {
         this.selectedShops = [];
       }
 
-      // Update category name
-      if (categoryName) {
-        this.selectedCategoryName = categoryName;
+      // Update category name based on the selected category
+      if (this.selectedCategoryId) {
+        const category = this.categories.find(
+          (cat) => cat.id === this.selectedCategoryId
+        );
+        if (category) {
+          this.selectedCategoryName = category.name;
+        } else {
+          // If not found in parent categories, search in subcategories
+          for (const parentCat of this.categories) {
+            const subcat = parentCat.subcategories.find(
+              (sub) => sub.id === this.selectedCategoryId
+            );
+            if (subcat) {
+              this.selectedCategoryName = subcat.name;
+              break;
+            }
+          }
+        }
       } else {
         this.selectedCategoryName = null;
       }
@@ -159,9 +186,10 @@ export default {
       this.fetchAllProducts();
     },
 
-    selectCategory(id, name) {
+    selectCategory(id, slug) {
+      console.log("selectCategory", id, slug);
       this.selectedCategoryId = id;
-      this.selectedCategoryName = name;
+      this.selectedCategoryName = slug;
       this.currentPage = 1;
       this.products = [];
       this.updateRoute();
@@ -170,26 +198,24 @@ export default {
 
     updateRoute() {
       const query = {};
+      const params = {};
 
       if (this.selectedCategoryId) {
-        query.categoryId = this.selectedCategoryId;
+        params.categoryId = this.selectedCategoryId;
+        params.slug = this.selectedCategoryName;
       }
 
       if (this.selectedShops.length) {
         query.merchantIds = this.selectedShops.join(",");
       }
 
-      // if (this.selectedSubcategoryId) {
-      //   query.subcategoryId = this.selectedSubcategoryId;
-      // }
-
-      if (this.selectedCategoryName) {
-        query.categoryName = this.selectedCategoryName;
-      }
-
+      console.log("params", params);
+      console.log("query", query);
+      console.log("this.selectedCategoryId", this.selectedCategoryId);
       // Use replace to avoid building up history
       this.$router.replace({
-        path: "/products",
+        name: this.selectedCategoryId ? "product-list" : "products",
+        params,
         query,
       });
     },
@@ -238,6 +264,7 @@ export default {
               parentCategory.subcategories.push({
                 id: category.id,
                 name: category.name, // Use 'name' as the subcategory name
+                slug: category.slug,
               });
             }
           }

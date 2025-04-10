@@ -15,7 +15,7 @@ const routes = [
   // Explain: This route is used to display the product list for a specific category and subcategory.
   // and it's used for filtering products by category and subcategory.
   {
-    path: "/products/:categoryId/:subcategoryId",
+    path: "/products/:categoryId/:slug",
     name: "product-list",
     component: ProductList,
   },
