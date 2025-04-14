@@ -128,7 +128,7 @@ export default {
   watch: {
     // Watch for route changes
     $route: {
-      immediate: true,
+      // immediate: true,
       handler(to) {
         this.handleRouteChange(to);
       },
@@ -139,9 +139,9 @@ export default {
       },
     },
   },
-  mounted() {
-    this.fetchCategories();
-    this.fetchAllProducts();
+  async mounted() {
+    await this.fetchCategories();
+    await this.fetchAllProducts();
     this.initializeFromURL();
     window.onscroll = this.handleScroll;
   },
@@ -150,16 +150,16 @@ export default {
   },
   methods: {
     handleRouteChange(to) {
-      console.log("to", to);
-
       // Extract parameters from route params instead of query
       const { categoryId, slug } = to.params;
 
       // Handle category ID from params
       if (categoryId) {
         this.selectedCategoryId = Number(categoryId);
+        this.selectedCategoryName = slug;
       } else {
         this.selectedCategoryId = null;
+        this.selectedCategoryName = null;
       }
 
       // Update selected shops from query (keeping this part unchanged)
@@ -203,7 +203,6 @@ export default {
     },
 
     selectCategory(id, slug) {
-      console.log("selectCategory", id, slug);
       this.selectedCategoryId = id;
 
       // Find the category name from the categories list
@@ -321,6 +320,9 @@ export default {
 
     toggleCategory(category) {
       category.expanded = !category.expanded; // Toggle the expanded state
+      if (category.expanded) {
+        this.selectCategory(category.id, category.slug);
+      }
     },
 
     // New method to fetch shops
